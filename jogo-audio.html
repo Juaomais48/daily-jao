@@ -287,6 +287,9 @@ footer{
   background: #7fd18c1a; border-color: var(--green); color: var(--green); font-weight: 700;
 }
 .cal-day.won-hard{
+  background: #7fd18c1a; border-color: var(--gold); color: var(--gold); font-weight: 700;
+}
+.cal-day.lose{
   background: #c1443c1a; border-color: var(--crimson); color: var(--crimson); font-weight: 700;
 }
 .cal-day[data-tooltip]{ cursor: default; }
@@ -310,7 +313,8 @@ footer{
 }
 .dot{ width: 10px; height: 10px; border-radius: 50%; display:inline-block; }
 .dot.won-normal{ background: var(--green); }
-.dot.won-hard{ background: var(--crimson); }
+.dot.won-hard{ background: var(--gold); }
+.dot.lose{ background: var(--crimson); }
 </style>
 </head>
 <body>
@@ -376,6 +380,7 @@ footer{
     <div class="cal-legend">
       <span class="legend-item"><i class="dot won-normal"></i> venceu · normal</span>
       <span class="legend-item"><i class="dot won-hard"></i> venceu · difícil</span>
+      <span class="legend-item"><i class="dot lose"></i> perdeu · :O</span>
     </div>
   </div>
 </div>
@@ -440,6 +445,20 @@ const SONGS = [
   { title: "Rádio", file: "mp3/radio.mp3" },
   { title: "São Paulo, 2015", file: "mp3/sao_paulo_2015.mp3" },
   { title: "Super", file: "mp3/super.mp3" },
+  { title: "Catedral", file: "mp3/catedral.mp3"},
+  { title: "O Amor", file: "mp3/o_amor.mp3"},
+  { title: "Aurora", file: "mp3/aurora.mp3"},
+  { title: "Por Você", file: "mp3/por_voce.mp3"},
+  { title: "Literatura", file: "mp3/literatura.mp3"},
+  { title: "Eu Sempre Volto", file: "mp3/eu_sempre_volto.mp3"},
+  { title: "Jabuticabeira", file: "mp3/jabuticabeira.mp3"},
+  { title: "João", file: "mp3/joao.mp3"},
+  { title: "Tudo Me Lembra", file: "mp3/tudo_me_lembra.mp3"},
+  { title: "Coincidências", file: "mp3/coincidencias.mp3"},
+  { title: "O Arquiteto", file: "mp3/o_arquiteto.mp3"},
+  { title: "Curioso", file: "mp3/curioso.mp3"},
+  { title: "Passeios Noturnos", file: "mp3/passeios_noturnos.mp3"},
+  { title: "Memórias Póstumas", file: "mp3/memorias_postumas.mp3"},
   { title: "Álcool", file: "mp3/alcool.mp3" },
   { title: "Louquinho", file: "mp3/louquinho.mp3" },
   { title: "Codinome Beija-Flor / O Tempo Não Para", file: "mp3/codinome_beija_flor_o_tempo_nao_para.mp3" },
@@ -796,16 +815,24 @@ function buildCalendar(){
       const daySong = SONGS[idx];
       const nData = getSavedGame(key, 'normal');
       const hData = getSavedGame(key, 'hard');
-      const wonNormal = !!(nData && nData.gameOver && nData.attempts && nData.attempts.some(a => a && a.correct));
-      const wonHard = !!(hData && hData.gameOver && hData.attempts && hData.attempts.some(a => a && a.correct));
+      const wonNormal = !!(nData && nData.gameOver && nData.attempts?.some(a => a.correct));
+      const wonHard = !!(hData && hData.gameOver && hData.attempts?.some(a => a.correct));
+      const lostNormal = !!(nData && nData.gameOver && !nData.attempts?.some(a => a.correct));
+      const lostHard = !!(hData && hData.gameOver && !hData.attempts?.some(a => a.correct));
+      const lose = lostNormal || lostHard;
 
-      if (wonHard) cell.classList.add('won-hard');
-      else if (wonNormal) cell.classList.add('won-normal');
+      if (wonHard) {
+        cell.classList.add('won-hard');
+      } else if (wonNormal) {
+        cell.classList.add('won-normal');
+      } else if (lose) {
+        cell.classList.add('lose');
+      }
 
       if (nData || hData){
         const lines = [];
-        if (nData) lines.push(`Normal: ${nData.attempts.length} tentativa(s)${wonNormal ? ' ✓' : ''}`);
-        if (hData) lines.push(`Difícil: ${hData.attempts.length} tentativa(s)${wonHard ? ' ✓' : ''}`);
+        if (nData) lines.push(`Normal: ${nData.attempts.length} tentativa(s)${wonNormal ? ' ✅' : ' ❌'}`);
+        if (hData) lines.push(`Difícil: ${hData.attempts.length} tentativa(s)${wonHard ? ' ✅' : ' ❌'}`);
         lines.push(daySong.title);
         cell.setAttribute('data-tooltip', lines.join('\n'));
       }
