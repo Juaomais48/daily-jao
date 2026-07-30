@@ -716,6 +716,17 @@ guessForm.addEventListener('submit', (e) => {
   const maxAttempts = getMaxAttempts();
   const lastIndex = maxAttempts - 1;
   const norm = normalize(raw);
+  const validGuess = SONGS.some(s => {
+    if (normalize(s.title) === norm) return true;
+    if (s.alt && normalize(s.alt) === norm) return true;
+    return false;
+  });
+
+  if (!validGuess){
+      feedback.textContent = "Escolha uma música existente.";
+      feedback.className = "feedback bad";
+      return;
+  }
   const correct = acceptedAnswers.includes(norm);
 
   hasStarted = true;
@@ -723,6 +734,15 @@ guessForm.addEventListener('submit', (e) => {
 
   if (correct){
     gameOver = true;
+    clearTimeout(playTimeout);
+
+    player.volume = 1;
+    player.currentTime = 0;
+    player.play();
+
+    playTimeout = setTimeout(() => {
+        fadeOutPlayer();
+    }, 10000);
     feedback.textContent = 'Isso aí! 🎉';
     feedback.className = 'feedback ok';
   } else {
@@ -788,6 +808,19 @@ autocompleteList.addEventListener('click', (e) => {
 });
 
 guessInput.addEventListener('keydown', (e) => {
+  if (e.key === "Tab"){
+
+        const first = autocompleteList.querySelector(".autocomplete-item");
+
+        if (first){
+            e.preventDefault();
+            guessInput.value = first.dataset.title;
+            hideAutocomplete();
+        }
+
+        return;
+    }
+
   if (e.key === 'Escape') hideAutocomplete();
 });
 
@@ -905,6 +938,23 @@ calCloseBtn.addEventListener('click', () => {
 calOverlay.addEventListener('click', (e) => {
   if (e.target === calOverlay) calOverlay.classList.remove('show');
 });
+
+function fadeOutPlayer(duration = 1000){
+    const startVolume = player.volume;
+    const steps = 20;
+    let current = 0;
+
+    const timer = setInterval(() => {
+        current++;
+        player.volume = startVolume * (1 - current / steps);
+
+        if (current >= steps){
+            clearInterval(timer);
+            player.pause();
+            player.volume = 1;
+        }
+    }, duration / steps);
+}
 
 /* ---------------- INIT ---------------- */
 loadState();
