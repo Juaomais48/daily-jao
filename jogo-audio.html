@@ -302,6 +302,9 @@ footer{
   width: 150px; text-align:center; line-height: 1.5;
   box-shadow: 0 10px 24px -8px #00000090; z-index: 30;
 }
+.cal-day.pending{ cursor:pointer; }
+.cal-day.pending:hover{ border-color: var(--gold); }
+.cal-day.in-progress{ border-color: var(--text-dim); }
 
 .cal-legend{
   display:flex; justify-content:center; gap: 16px; margin-top: 16px;
@@ -489,9 +492,10 @@ function todaysDateKey(){
   return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
 }
 
-const dayIdx = ((dayNumber() % SONGS.length) + SONGS.length) % SONGS.length;
-const song = SONGS[dayIdx];
-const acceptedAnswers = [normalize(song.title)];
+let currentDate = new Date();               // data do puzzle sendo jogado agora
+let dayIdx = ((dayNumberFor(currentDate) % SONGS.length) + SONGS.length) % SONGS.length;
+let song = SONGS[dayIdx];
+let acceptedAnswers = [normalize(song.title)];
 if (song.alt) acceptedAnswers.push(normalize(song.alt));
 
 const NORMAL_DURATIONS = [1, 2, 3, 4, 5];
@@ -500,7 +504,36 @@ const HARD_DURATIONS = [0.5];
 function getDurations(){ return hardMode ? HARD_DURATIONS : NORMAL_DURATIONS; }
 function getMaxAttempts(){ return getDurations().length; }
 function formatDuration(d){ return d === 0.5 ? 'meio segundo' : `${d} segundo${d > 1 ? 's' : ''}`; }
-function storageKey(){ return `jao-audio-game-${todaysDateKey()}-${hardMode ? 'hard' : 'normal'}`; }
+function storageKey(){ return `jao-audio-game-${dateKeyFor(currentDate)}-${hardMode ? 'hard' : 'normal'}`; }
+
+function carregarDia(dataObj, modoInicial = 'normal'){
+  currentDate = dataObj;
+  dayIdx = ((dayNumberFor(currentDate) % SONGS.length) + SONGS.length) % SONGS.length;
+  song = SONGS[dayIdx];
+  acceptedAnswers = [normalize(song.title)];
+  if (song.alt) acceptedAnswers.push(normalize(song.alt));
+
+  if (playTimeout) clearTimeout(playTimeout);
+  player.pause();
+  isPlaying = false;
+  playBtn.classList.remove('playing');
+
+  hardMode = modoInicial === 'hard';
+  hardModeToggle.checked = hardMode;
+  attemptIndex = 0;
+  attempts = [];
+  gameOver = false;
+  hasStarted = false;
+
+  player.src = song.file;
+  loadState(); // agora storageKey() já reflete o hardMode certo, então acha o save em andamento
+
+  feedback.textContent = '';
+  feedback.className = 'feedback';
+
+  dayTag.textContent = currentDate.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  renderAll();
+}
 
 /* ---------------- STATE ---------------- */
 let hardMode = false;
@@ -566,7 +599,7 @@ function playSnippet(){
   playBtn.disabled = true;
   playBtn.classList.add('playing');
   hardModeToggle.disabled = true;
-  player.currentTime = 0;
+  player.currentTime = 0.5;
   player.play().catch(() => {
     playHint.textContent = 'Não foi possível tocar o áudio.';
     isPlaying = false;
@@ -805,7 +838,6 @@ function buildCalendar(){
     const cellDate = new Date(year, month, d);
     const cell = document.createElement('div');
     cell.className = 'cal-day';
-    cell.textContent = d;
 
     if (cellDate.getTime() > todayMidnight.getTime()){
       cell.classList.add('future');
@@ -815,26 +847,45 @@ function buildCalendar(){
       const daySong = SONGS[idx];
       const nData = getSavedGame(key, 'normal');
       const hData = getSavedGame(key, 'hard');
-      const wonNormal = !!(nData && nData.gameOver && nData.attempts?.some(a => a.correct));
-      const wonHard = !!(hData && hData.gameOver && hData.attempts?.some(a => a.correct));
-      const lostNormal = !!(nData && nData.gameOver && !nData.attempts?.some(a => a.correct));
-      const lostHard = !!(hData && hData.gameOver && !hData.attempts?.some(a => a.correct));
+      const nResolved = !!(nData && nData.gameOver);
+      const hResolved = !!(hData && hData.gameOver);
+      const wonNormal = nResolved && nData.attempts.some(a => a && a.correct);
+      const wonHard   = hResolved && hData.attempts.some(a => a && a.correct);
+      const lostNormal = nResolved && !wonNormal;
+      const lostHard   = hResolved && !wonHard;
       const lose = lostNormal || lostHard;
+      const won  = wonNormal || wonHard;
+      const emAndamento = (nData && !nData.gameOver) || (hData && !hData.gameOver);
 
-      if (wonHard) {
-        cell.classList.add('won-hard');
-      } else if (wonNormal) {
-        cell.classList.add('won-normal');
-      } else if (lose) {
+      if (won){
+        cell.textContent = '★';
+        cell.classList.add(wonHard ? 'won-hard' : 'won-normal');
+      } else if (lose){
+        cell.textContent = '✕';
         cell.classList.add('lose');
+      } else {
+        cell.textContent = d; // nunca jogado OU em andamento — não marca nada
+        if (emAndamento) cell.classList.add('in-progress');
       }
 
-      if (nData || hData){
+      if (!won && !lose){
+        cell.classList.add('pending');
+        cell.addEventListener('click', () => {
+          calOverlay.classList.remove('show');
+          const modoParaAbrir = (hData && !hData.gameOver) ? 'hard' : 'normal';
+          carregarDia(cellDate, modoParaAbrir);
+        });
+      }
+
+      // tooltip: só revela nome da música se pelo menos um modo foi resolvido
+      if (nResolved || hResolved){
         const lines = [];
-        if (nData) lines.push(`Normal: ${nData.attempts.length} tentativa(s)${wonNormal ? ' ✅' : ' ❌'}`);
-        if (hData) lines.push(`Difícil: ${hData.attempts.length} tentativa(s)${wonHard ? ' ✅' : ' ❌'}`);
+        if (nResolved) lines.push(`Normal: ${nData.attempts.length} tentativa(s)${wonNormal ? ' ✅' : ' ❌'}`);
+        if (hResolved) lines.push(`Difícil: ${hData.attempts.length} tentativa(s)${wonHard ? ' ✅' : ' ❌'}`);
         lines.push(daySong.title);
         cell.setAttribute('data-tooltip', lines.join('\n'));
+      } else if (emAndamento){
+        cell.setAttribute('data-tooltip', 'Jogo em andamento');
       }
     }
 

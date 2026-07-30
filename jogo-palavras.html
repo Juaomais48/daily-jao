@@ -751,6 +751,14 @@ function endGame(won){
   overlay.classList.add('show');
   overlayStat.textContent = formatTime(countdownMode ? (parseInt(minutesInput.value||'5',10)*60 - seconds) : seconds);
   if (won){
+    const tempoFinal = countdownMode
+    ? (parseInt(minutesInput.value||'5',10)*60 - seconds)
+    : seconds;
+    const modo = hardMode ? 'hard' : 'normal';
+    const recordes = JSON.parse(localStorage.getItem('jao-palavras-recordes') || '{}');
+    recordes[modo] = { seconds: tempoFinal, data: new Date().toISOString() };
+    localStorage.setItem('jao-palavras-recordes', JSON.stringify(recordes));
+
     overlayCard.className = 'overlay-card win';
     overlayTitle.textContent = 'Lua cheia! 🌕';
     overlayText.textContent = 'Você revelou todas as palavras da discografia.';
