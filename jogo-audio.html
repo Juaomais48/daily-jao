@@ -524,9 +524,10 @@ function carregarDia(dataObj, modoInicial = 'normal'){
   attempts = [];
   gameOver = false;
   hasStarted = false;
+  crossModeLock = null;
 
   player.src = song.file;
-  loadState(); // agora storageKey() já reflete o hardMode certo, então acha o save em andamento
+  loadState();
 
   feedback.textContent = '';
   feedback.className = 'feedback';
@@ -541,18 +542,51 @@ let attemptIndex = 0;
 let attempts = []; // { text, correct }
 let gameOver = false;
 let hasStarted = false;
+let crossModeLock = null;
+
+function readSavedGame(dateObj, mode){
+  try{
+    const raw = localStorage.getItem(`jao-audio-game-${dateKeyFor(dateObj)}-${mode}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+
+function resolveInitialMode(dateObj){
+  const nData = readSavedGame(dateObj, 'normal');
+  const hData = readSavedGame(dateObj, 'hard');
+  if (nData && nData.gameOver) return 'normal';
+  if (hData && hData.gameOver) return 'hard';
+  if (nData && nData.hasStarted) return 'normal';
+  if (hData && hData.hasStarted) return 'hard';
+  return 'normal';
+}
 
 function loadState(){
+  crossModeLock = null;
   try{
     const raw = localStorage.getItem(storageKey());
-    if (!raw) return;
-    const saved = JSON.parse(raw);
-    if (saved.song !== song.title) return;
-    attemptIndex = saved.attemptIndex;
-    attempts = saved.attempts;
-    gameOver = saved.gameOver;
-    hasStarted = !!saved.hasStarted;
+    if (raw){
+      const saved = JSON.parse(raw);
+      if (saved.song === song.title){
+        attemptIndex = saved.attemptIndex;
+        attempts = saved.attempts;
+        gameOver = saved.gameOver;
+        hasStarted = !!saved.hasStarted;
+      }
+    }
   } catch(e){ /* localStorage indisponível — segue sem salvar */ }
+  if (!gameOver){
+    const otherMode = hardMode ? 'normal' : 'hard';
+    const otherSaved = readSavedGame(currentDate, otherMode);
+    if (otherSaved && otherSaved.song === song.title && otherSaved.gameOver){
+      gameOver = true;
+      hasStarted = true;
+      crossModeLock = {
+        mode: otherMode,
+        won: otherSaved.attempts.some(a => a && a.correct)
+      };
+    }
+  }
 }
 
 function saveState(){
@@ -674,6 +708,14 @@ function renderPlayHint(){
 function renderResult(){
   if (!gameOver){
     resultCard.classList.remove('show', 'win', 'lose');
+    return;
+  }
+  if (crossModeLock){
+    const won = crossModeLock.won;
+    const modeLabel = crossModeLock.mode === 'hard' ? 'difícil' : 'normal';
+    resultCard.classList.add('show', won ? 'win' : 'lose');
+    resultTitle.textContent = won ? 'Já jogou hoje! 🎧' : 'Já jogou hoje...';
+    resultText.innerHTML = `Você já concluiu o desafio de hoje no modo <b>${modeLabel}</b>. A música era <span class="answer">${song.title}</span>. Volte amanhã pra uma faixa nova.`;
     return;
   }
   const won = attempts.some(a => a && a.correct);
@@ -957,6 +999,8 @@ function fadeOutPlayer(duration = 1000){
 }
 
 /* ---------------- INIT ---------------- */
+hardMode = resolveInitialMode(currentDate) === 'hard';
+hardModeToggle.checked = hardMode;
 loadState();
 renderAll();
 </script>
