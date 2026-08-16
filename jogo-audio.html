@@ -473,6 +473,33 @@ const SONGS = [
 ];
 
 /* ---------------- HELPERS ---------------- */
+function hashInt(x){
+  x = x ^ (x >>> 16);
+  x = Math.imul(x, 0x45d9f3b);
+  x = x ^ (x >>> 16);
+  x = Math.imul(x, 0x45d9f3b);
+  x = x ^ (x >>> 16);
+  return x >>> 0;
+}
+
+function songIndexForDay(dayNum){
+  const n = SONGS.length;
+  const cycle = Math.floor(dayNum / n);
+  const posInCycle = ((dayNum % n) + n) % n;
+
+  const perm = Array.from({ length: n }, (_, i) => i);
+  let seed = cycle + 1; // seed diferente a cada ciclo completo
+  const rand = () => {
+    seed = hashInt(seed);
+    return seed / 4294967296;
+  };
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [perm[i], perm[j]] = [perm[j], perm[i]];
+  }
+  return perm[posInCycle];
+}
+
 function normalize(str){
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
@@ -493,7 +520,7 @@ function todaysDateKey(){
 }
 
 let currentDate = new Date();               // data do puzzle sendo jogado agora
-let dayIdx = ((dayNumberFor(currentDate) % SONGS.length) + SONGS.length) % SONGS.length;
+let dayIdx = songIndexForDay(dayNumberFor(currentDate));
 let song = SONGS[dayIdx];
 let acceptedAnswers = [normalize(song.title)];
 if (song.alt) acceptedAnswers.push(normalize(song.alt));
@@ -508,7 +535,7 @@ function storageKey(){ return `jao-audio-game-${dateKeyFor(currentDate)}-${hardM
 
 function carregarDia(dataObj, modoInicial = 'normal'){
   currentDate = dataObj;
-  dayIdx = ((dayNumberFor(currentDate) % SONGS.length) + SONGS.length) % SONGS.length;
+  dayIdx = songIndexForDay(dayNumberFor(currentDate));
   song = SONGS[dayIdx];
   acceptedAnswers = [normalize(song.title)];
   if (song.alt) acceptedAnswers.push(normalize(song.alt));
@@ -918,7 +945,7 @@ function buildCalendar(){
       cell.classList.add('future');
     } else {
       const key = dateKeyFor(cellDate);
-      const idx = ((dayNumberFor(cellDate) % SONGS.length) + SONGS.length) % SONGS.length;
+      const idx = songIndexForDay(dayNumberFor(cellDate));
       const daySong = SONGS[idx];
       const nData = getSavedGame(key, 'normal');
       const hData = getSavedGame(key, 'hard');
