@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete a Letra — Jão</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+:root{
+  --bg:#0a0c17; --panel:#12152a; --panel-2:#171b34; --border:#262b4d;
+  --text:#e9e6dd; --text-dim:#8890b3; --gold:#d9a441; --gold-soft:#d9a44133;
+  --crimson:#c1443c; --green:#7fd18c;
+  --serif:'Fraunces',serif; --sans:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  background: radial-gradient(ellipse 900px 500px at 50% -10%, #1a1f42 0%, transparent 60%), var(--bg);
+  color:var(--text); font-family:var(--sans); min-height:100vh; padding:32px 16px 80px; line-height:1.5;
+}
+.wrap{ max-width:600px; margin:0 auto; }
+.top-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.trophy-btn{
+  width:38px; height:38px; border-radius:10px; background:var(--panel); border:1px solid var(--border);
+  color:var(--gold); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;
+}
+.trophy-btn:hover{ border-color:var(--gold); transform:translateY(-1px); }
+.back-link{
+  display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px;
+  color:var(--text-dim); text-decoration:none; border:1px solid var(--border);
+  border-radius:20px; padding:6px 14px; transition:.15s;
+}
+.back-link:hover{ color:var(--gold); border-color:var(--gold); }
+header{ text-align:center; margin-bottom:28px; }
+.eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
+h1{ font-family:var(--serif); font-weight:600; font-size:clamp(28px,6vw,40px); letter-spacing:-.01em; }
+h1 em{ font-style:italic; font-weight:500; color:var(--gold); }
+.subtitle{ color:var(--text-dim); font-size:14px; margin-top:8px; }
+.day-tag{
+  display:inline-block; margin-top:14px; font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--gold); border:1px solid var(--gold-soft);
+  background:var(--gold-soft); border-radius:20px; padding:5px 14px;
+}
+.mode-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px; }
+.mode-label{ font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+.mode-label.active{ color:var(--crimson); }
+.switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; cursor:pointer; inset:0; background:var(--panel-2); border:1px solid var(--border); border-radius:24px; transition:.25s; }
+.slider::before{ content:""; position:absolute; height:16px; width:16px; left:3px; top:2px; background:var(--text-dim); border-radius:50%; transition:.25s; }
+.switch input:checked + .slider{ background:var(--crimson); border-color:var(--crimson); }
+.switch input:checked + .slider::before{ transform:translateX(18px); background:#fff; }
+.switch input:disabled + .slider{ opacity:.45; cursor:not-allowed; }
+
+.card{ background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:28px 22px; text-align:center; }
+.lyrics{ font-family:var(--serif); font-size:clamp(18px,4.4vw,22px); line-height:1.5; margin-bottom:22px; }
+.lyric-line{ margin-bottom:14px; }
+.tok{ white-space:nowrap; }
+.blank{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:top; margin:0 2px; }
+.slot{
+  display:inline-flex; align-items:center; justify-content:center; min-width:92px; height:38px;
+  border:1.5px dashed var(--border); border-radius:9px; background:var(--panel-2); transition:.15s;
+}
+.slot.over{ border-color:var(--gold); background:var(--gold-soft); }
+.slot:has(.chip){ border-style:solid; border-color:var(--gold-soft); }
+.slot.ok, .blank-input.ok{ border-color:var(--green); background:#7fd18c14; }
+.slot.bad, .blank-input.bad{ border-color:var(--crimson); background:#c1443c14; }
+.blank-input{
+  background:transparent; border:none; border-bottom:2px solid var(--gold); color:var(--text);
+  font:inherit; text-align:center; padding:2px 4px; min-width:70px; border-radius:4px 4px 0 0;
+}
+.blank-input:focus{ outline:none; background:var(--gold-soft); }
+.blank-input:disabled{ opacity:1; }
+.fix{ font-family:var(--mono); font-size:11px; color:var(--green); margin-top:3px; }
+
+.bank{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:10px; min-height:58px;
+  padding:14px; margin-bottom:20px; border:1px dashed var(--border); border-radius:14px; background:#0d1022;
+}
+.bank-empty{ font-family:var(--mono); font-size:12px; color:var(--text-dim); align-self:center; }
+.chip{
+  font-family:var(--sans); font-size:15px; font-weight:500; padding:6px 13px; border-radius:8px;
+  background:var(--panel-2); border:1px solid var(--gold-soft); color:var(--text);
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.chip:hover{ border-color:var(--gold); color:var(--gold); }
+.chip.dragging{ opacity:.3; }
+.chip.ghost{ position:fixed; z-index:100; pointer-events:none; transform:translate(-50%,-50%) scale(1.06); background:var(--gold); color:#17130a; box-shadow:0 10px 24px -6px #000a; }
+.slot .chip{ border:none; background:transparent; }
+.slot.ok .chip, .slot.bad .chip{ cursor:default; }
+
+button.btn{
+  font-family:var(--sans); font-weight:600; font-size:14px; border-radius:10px; border:none;
+  padding:13px 26px; cursor:pointer; background:linear-gradient(135deg,var(--gold),#c98a2c); color:#17130a; transition:.15s;
+}
+button.btn:hover{ filter:brightness(1.08); }
+button.btn:disabled{ opacity:.4; cursor:not-allowed; filter:none; }
+.feedback{ min-height:20px; font-size:13px; font-family:var(--mono); margin-top:12px; }
+.feedback.ok{ color:var(--green); } .feedback.bad{ color:var(--crimson); }
+
+.result-card{ display:none; text-align:center; margin-top:22px; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:26px; }
+.result-card.show{ display:block; }
+.result-card.win{ border-color:var(--gold-soft); box-shadow:0 0 0 1px var(--gold-soft); }
+.result-card h2{ font-family:var(--serif); font-style:italic; font-size:24px; margin-bottom:8px; }
+.result-card.win h2{ color:var(--gold); } .result-card.lose h2{ color:var(--crimson); }
+.result-card p{ color:var(--text-dim); font-size:13.5px; margin-bottom:16px; }
+.result-card .answer{ color:var(--text); font-weight:700; }
+.result-card .btn{ padding:10px 20px; font-size:13px; }
+footer{ text-align:center; margin-top:40px; color:var(--text-dim); font-size:12px; font-family:var(--mono); }
+
+/* -------- Calendário -------- */
+.cal-overlay{
+  position:fixed; inset:0; background:#05060cdd; backdrop-filter:blur(6px); display:flex; align-items:center;
+  justify-content:center; z-index:60; opacity:0; pointer-events:none; transition:opacity .3s; padding:16px;
+}
+.cal-overlay.show{ opacity:1; pointer-events:all; }
+.cal-card{
+  background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:24px 22px;
+  width:100%; max-width:380px; transform:translateY(10px); transition:transform .3s;
+}
+.cal-overlay.show .cal-card{ transform:translateY(0); }
+.cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.cal-head h2{ font-family:var(--serif); font-weight:600; font-size:18px; text-transform:capitalize; }
+.cal-close{
+  width:28px; height:28px; border-radius:8px; background:transparent; border:1px solid var(--border);
+  color:var(--text-dim); cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center;
+}
+.cal-close:hover{ color:var(--gold); border-color:var(--gold); }
+.cal-weekdays{ display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:6px; }
+.cal-weekdays span{ text-align:center; font-family:var(--mono); font-size:10px; color:var(--text-dim); }
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.cal-day{
+  aspect-ratio:1; border-radius:8px; background:var(--panel-2); border:1px solid transparent; display:flex;
+  align-items:center; justify-content:center; font-family:var(--mono); font-size:12.5px; color:var(--text); position:relative;
+}
+.cal-day.empty{ visibility:hidden; }
+.cal-day.future{ color:#3d4160; background:#10132a; cursor:not-allowed; }
+.cal-day.won-normal{ background:#7fd18c1a; border-color:var(--green); color:var(--green); font-weight:700; }
+.cal-day.won-hard{ background:#7fd18c1a; border-color:var(--gold); color:var(--gold); font-weight:700; }
+.cal-day.lose{ background:#c1443c1a; border-color:var(--crimson); color:var(--crimson); font-weight:700; }
+.cal-day.pending{ cursor:pointer; }
+.cal-day.pending:hover{ border-color:var(--gold); }
+.cal-day.in-progress{ border-color:var(--text-dim); }
+.cal-day.current{ box-shadow:0 0 0 2px var(--gold-soft); }
+.cal-day[data-tooltip]{ cursor:default; }
+.cal-day[data-tooltip]:hover::after{
+  content:attr(data-tooltip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+  background:var(--panel-2); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:8px;
+  font-size:10.5px; font-family:var(--mono); white-space:pre-line; width:150px; text-align:center; line-height:1.5;
+  box-shadow:0 10px 24px -8px #00000090; z-index:30;
+}
+.cal-legend{ display:flex; justify-content:center; gap:16px; margin-top:16px; flex-wrap:wrap; }
+.legend-item{ display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; color:var(--text-dim); }
+.dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+.dot.won-normal{ background:var(--green); } .dot.won-hard{ background:var(--gold); } .dot.lose{ background:var(--crimson); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-row">
+    <a class="back-link" href="index.html">&larr; lobby</a>
+    <button class="trophy-btn" id="trophyBtn" aria-label="Ver calendário" title="Calendário">🏆</button>
+  </div>
+
+  <header>
+    <div class="eyebrow">letra · edição diária</div>
+    <h1>Complete a <em>letra</em></h1>
+    <p class="subtitle" id="subtitle"></p>
+    <div class="day-tag" id="dayTag"></div>
+    <div class="mode-row">
+      <span class="mode-label" id="modeLabelNormal">normal</span>
+      <label class="switch"><input type="checkbox" id="hardToggle"><span class="slider"></span></label>
+      <span class="mode-label" id="modeLabelHard">difícil · 2 linhas · digitar</span>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="lyrics" id="lyrics">Carregando a letra...</div>
+    <div class="bank" id="bank"></div>
+    <button class="btn" id="submitBtn" disabled>Conferir letra</button>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <h2 id="resultTitle"></h2>
+    <p id="resultText"></p>
+  </div>
+
+  <footer>uma letra nova a cada dia 🌙</footer>
+</div>
+<div class="cal-overlay" id="calOverlay">
+  <div class="cal-card">
+    <div class="cal-head">
+      <h2 id="calMonthLabel">Mês</h2>
+      <button class="cal-close" id="calCloseBtn" aria-label="Fechar calendário">✕</button>
+    </div>
+    <div class="cal-weekdays"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span class="legend-item"><i class="dot won-normal"></i> venceu · normal</span>
+      <span class="legend-item"><i class="dot won-hard"></i> venceu · difícil</span>
+      <span class="legend-item"><i class="dot lose"></i> perdeu · :O</span>
+    </div>
+  </div>
+</div>
+
+<audio id="player" preload="auto"></audio>
+
+<script src="letras.js"></script>
+<script>
+/* ---------- MÚSICAS ----------
+   Só os títulos: o nome dos arquivos é derivado do título
+   ("Não Te Amo" -> mp3/nao_te_amo.mp3 e txt/nao_te_amo.txt).
+   Se algum arquivo fugir desse padrão, use { title:"...", base:"nome_do_arquivo" }. */
+const TITLES = [
+  "Vou Morrer Sozinho","Me Beija Com Raiva","Lindo Demais","Imaturo","Ainda Te Amo","A Rua","Lobos",
+  "Eu Quero Ser Como Você","Aqui","Monstros","Fim Do Mundo","Ressaca","A Última Noite","Triste Pra Sempre",
+  "Enquanto Me Beija","Essa Eu Fiz Pro Nosso Amor","Fim De Festa","Barcelona","Você Vai Me Destruir","VSF",
+  "Hotel San Diego","Clarão","Não Te Amo","Idiota","Santo","Acontece","Você Me Perdeu","Meninos e Meninas",
+  "Coringa","Doce","Tempos De Glória","Olhos Vermelhos","Religião","Acidente","Modo de Dizer",
+  "O Triste É Que Eu Te Amo","Carnaval","Supernova","Paranoid","Escorpião","Me Lambe","Gameboy",
+  "Alinhamento Milenar","Lábia","Maria","Julho","Eu Posso Ser Como Você","Sinais",
+  "Se O Problema Era Você, Por Que Doeu Em Mim?","Locadora","Rádio","São Paulo, 2015","Super","Catedral",
+  "O Amor","Aurora","Por Você","Literatura","Eu Sempre Volto","Jabuticabeira","João","Tudo Me Lembra",
+  "Coincidências","O Arquiteto","Curioso","Passeios Noturnos","Memórias Póstumas","Álcool","Louquinho",
+  "Codinome Beija-Flor / O Tempo Não Para","AMOR PIRATA","Dança Pra Mim (feat. Pedrowl)",
+  "Pilantra (feat. Anitta)","Mal (feat. Gustavo Mioto)","Jardins Da Babilônia (feat. Julia Mestre)"
+];
+const slug = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+const SONGS = TITLES.map(t => typeof t === 'string' ? { title:t, base:slug(t) } : t);
+
+/* ---------- HELPERS ---------- */
+const $ = id => document.getElementById(id);
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function hashInt(x){
+  x = x ^ (x >>> 16); x = Math.imul(x, 0x45d9f3b);
+  x = x ^ (x >>> 16); x = Math.imul(x, 0x45d9f3b);
+  x = x ^ (x >>> 16); return x >>> 0;
+}
+function makeRand(seed){ let s = (seed ^ 0x5bd1e995) || 1; return () => (s = hashInt(s)) / 4294967296; }
+function shuffle(arr, rand){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const today = new Date();
+let currentDate = today;   // dia sendo jogado (muda ao escolher outro dia no calendário)
+const dayNumberFor = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+const dateKeyFor = d => `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+const SALT = 100003; // faz a música do dia ser diferente da do jogo de áudio
+
+// Candidatas do dia (a 1ª é a música; as demais só entram se faltar o .txt)
+function songOrderForDay(dn){
+  const n = SONGS.length, cycle = Math.floor(dn / n), pos = ((dn % n) + n) % n;
+  const perm = shuffle([...Array(n).keys()], makeRand(cycle + 1 + SALT));
+  return Array.from({ length: 5 }, (_, k) => perm[(pos + k) % n]);
+}
+
+/* ---------- LETRA ---------- */
+function parseStanzas(text){
+  return text.replace(/\r/g, '').split(/\n\s*\n/)
+    .map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length);
+}
+const lyricsCache = new Map();
+async function loadLyrics(dn){
+  if (lyricsCache.has(dn)) return lyricsCache.get(dn);
+  const res = await fetchLyrics(dn);
+  if (res) lyricsCache.set(dn, res);
+  return res;
+}
+async function fetchLyrics(dn){
+  for (const idx of songOrderForDay(dn)){
+    const song = SONGS[idx];
+    let text = window.LETRAS?.[song.base];   // letras.js (opcional); senão busca em txt/
+    if (text === undefined){
+      try{
+        const r = await fetch(`txt/${song.base}.txt`);
+        if (!r.ok) continue;
+        text = await r.text();
+      } catch(e){ continue; }
+    }
+    const stanzas = parseStanzas(text);
+    if (stanzas.some(s => s.length >= 3)) return { song, stanzas };
+  }
+  return null;
+}
+function tokenize(line){
+  return line.split(/\s+/).map(t => {
+    const m = t.match(/^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u);
+    return { lead:m[1], core:m[2], trail:m[3] };
+  });
+}
+
+/* Escolhe o trecho e as palavras que viram lacuna (determinístico por dia e modo). */
+function buildPuzzle(data, hard, dn){
+  const rand = makeRand(dn * 2 + (hard ? 1 : 0) + SALT);
+  const nLines = hard ? 2 : 3, nBlanks = hard ? 3 : 5;
+  const pool = (lines, minLen) => {
+    const out = [];
+    lines.forEach((toks, l) => toks.forEach((t, k) => { if ([...t.core].length >= minLen) out.push({ l, k }); }));
+    return out;
+  };
+  const cands = [];
+  data.stanzas.forEach(st => {
+    for (let i = 0; i + nLines <= st.length; i++) cands.push(st.slice(i, i + nLines).map(tokenize));
+  });
+  let good = cands.filter(ls => pool(ls, 3).length >= nBlanks);
+  if (!good.length) good = cands;
+  const lines = good[Math.floor(rand() * good.length)];
+  let p = pool(lines, 4);
+  if (p.length < nBlanks) p = pool(lines, 3);
+  const seen = new Set(), picked = [];
+  for (const c of shuffle(p, rand)){
+    const key = norm(lines[c.l][c.k].core);
+    if (seen.has(key)) continue;
+    seen.add(key); picked.push(c);
+    if (picked.length === nBlanks) break;
+  }
+  picked.sort((a, b) => a.l - b.l || a.k - b.k);
+  const blanks = picked.map((c, i) => { lines[c.l][c.k].blank = i; return { core: lines[c.l][c.k].core }; });
+  return { lines, blanks, bankOrder: shuffle(blanks.map((_, i) => i), rand) };
+}
+
+/* ---------- ESTADO ---------- */
+let data, puzzle, hard = false;
+let slots = [];          // normal: id da palavra (ou null) · difícil: texto digitado
+let gameOver = false, hasStarted = false, results = null, lock = null;
+
+const storageKey = (h, d = currentDate) => `jao-letra-game-${dateKeyFor(d)}-${h ? 'hard' : 'normal'}`;
+function readSaved(h, d = currentDate){
+  try{ const r = localStorage.getItem(storageKey(h, d)); return r ? JSON.parse(r) : null; } catch(e){ return null; }
+}
+function saveState(){
+  try{ localStorage.setItem(storageKey(hard), JSON.stringify({ song:data.song.title, slots, gameOver, hasStarted, results })); } catch(e){}
+}
+function loadState(){
+  lock = null;
+  const s = readSaved(hard);
+  if (s && s.song === data.song.title && s.slots && s.slots.length === puzzle.blanks.length){
+    slots = s.slots; gameOver = !!s.gameOver; hasStarted = !!s.hasStarted; results = s.results || null;
+  }
+  if (!gameOver){
+    const o = readSaved(!hard);
+    if (o && o.song === data.song.title && o.gameOver){
+      gameOver = true; hasStarted = true;
+      lock = { mode: hard ? 'normal' : 'difícil', won: (o.results || []).every(Boolean) };
+    }
+  }
+}
+function initialMode(){
+  const n = readSaved(false), h = readSaved(true);
+  if (n && n.gameOver) return false;
+  if (h && h.gameOver) return true;
+  if (n && n.hasStarted) return false;
+  if (h && h.hasStarted) return true;
+  return false;
+}
+function setup(){
+  puzzle = buildPuzzle(data, hard, dayNumberFor(currentDate));
+  slots = puzzle.blanks.map(() => hard ? '' : null);
+  gameOver = false; hasStarted = false; results = null;
+  loadState();
+  $('feedback').textContent = '';
+  renderAll();
+}
+
+/* ---------- RENDER ---------- */
+function answerAt(i){
+  return hard ? (slots[i] || '') : (slots[i] != null ? puzzle.blanks[slots[i]].core : '');
+}
+function chipEl(id, from){
+  const c = document.createElement('div');
+  c.className = 'chip'; c.textContent = puzzle.blanks[id].core;
+  c.dataset.chip = id; c.dataset.from = from;
+  return c;
+}
+function renderLyrics(){
+  const box = $('lyrics'); box.innerHTML = '';
+  puzzle.lines.forEach(toks => {
+    const line = document.createElement('div'); line.className = 'lyric-line';
+    toks.forEach(t => {
+      const w = document.createElement('span'); w.className = 'tok';
+      if (t.blank === undefined){ w.textContent = t.lead + t.core + t.trail; }
+      else {
+        const i = t.blank, b = document.createElement('span'); b.className = 'blank';
+        const state = results ? (results[i] ? 'ok' : 'bad') : '';
+        if (hard){
+          const inp = document.createElement('input');
+          inp.className = 'blank-input ' + state; inp.value = slots[i] || ''; inp.disabled = gameOver;
+          inp.style.width = ([...t.core].length + 2) + 'ch';
+          inp.setAttribute('autocomplete','off'); inp.setAttribute('autocapitalize','off'); inp.spellcheck = false;
+          inp.setAttribute('aria-label', `Palavra ${i + 1}`);
+          inp.addEventListener('input', () => { slots[i] = inp.value; hasStarted = true; saveState(); updateControls(); });
+          inp.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const all = [...$('lyrics').querySelectorAll('.blank-input')], next = all[all.indexOf(inp) + 1];
+            if (next) next.focus(); else if (!$('submitBtn').disabled) $('submitBtn').click();
+          });
+          b.append(inp);
+        } else {
+          const s = document.createElement('span');
+          s.className = 'slot ' + state; s.dataset.slot = i;
+          if (slots[i] != null) s.append(chipEl(slots[i], i));
+          b.append(s);
+        }
+        if (results && !results[i]){
+          const f = document.createElement('small'); f.className = 'fix'; f.textContent = puzzle.blanks[i].core; b.append(f);
+        }
+        w.append(t.lead, b, t.trail);
+      }
+      line.append(w, ' ');
+    });
+    box.append(line);
+  });
+}
+function renderBank(){
+  const bank = $('bank'); bank.innerHTML = '';
+  bank.style.display = hard ? 'none' : '';
+  if (hard) return;
+  puzzle.bankOrder.filter(id => !slots.includes(id)).forEach(id => bank.append(chipEl(id, 'bank')));
+  if (!bank.children.length) bank.innerHTML = '<span class="bank-empty">todas as palavras estão na letra</span>';
+}
+function renderResult(){
+  const card = $('resultCard');
+  card.classList.remove('show', 'win', 'lose');
+  if (!gameOver) return;
+  const title = data.song.title;
+  let won, head, text;
+  if (lock){
+    won = lock.won; head = won ? 'Já jogou hoje! 🎧' : 'Já jogou hoje...';
+    text = `Você já concluiu o desafio de hoje no modo <b>${lock.mode}</b>. A música era <span class="answer">${title}</span>. Volte amanhã pra uma letra nova.`;
+  } else {
+    const hits = (results || []).filter(Boolean).length;
+    won = hits === puzzle.blanks.length;
+    head = won ? 'Mandou bem! 🎶' : 'Não foi dessa vez...';
+    text = `A música era <span class="answer">${title}</span>. Você acertou ${hits} de ${puzzle.blanks.length} lacunas. Volte amanhã pra uma letra nova.`;
+  }
+  card.classList.add('show', won ? 'win' : 'lose');
+  $('resultTitle').textContent = head; $('resultText').innerHTML = text;
+}
+function updateControls(){
+  const filled = hard ? slots.every(x => x && x.trim()) : slots.every(x => x != null);
+  $('submitBtn').disabled = gameOver || !filled;
+  $('hardToggle').disabled = hasStarted; $('hardToggle').checked = hard;
+  $('modeLabelNormal').classList.toggle('active', !hard);
+  $('modeLabelHard').classList.toggle('active', hard);
+}
+function renderAll(){
+  $('subtitle').textContent = hard
+    ? 'Digite as palavras que faltam nas linhas da música.'
+    : 'Arraste as palavras para as lacunas e monte a letra.';
+  renderLyrics(); renderBank(); renderResult(); updateControls();
+}
+
+/* ---------- ARRASTAR E SOLTAR (mouse e toque) ---------- */
+let drag = null;
+const clearOver = () => document.querySelectorAll('.slot.over').forEach(s => s.classList.remove('over'));
+
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('.chip');
+  if (!el || el.classList.contains('ghost') || gameOver || hard) return;
+  drag = { id:+el.dataset.chip, from: el.dataset.from === 'bank' ? 'bank' : +el.dataset.from,
+           x:e.clientX, y:e.clientY, moved:false, ghost:null, el };
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6){
+    drag.moved = true;
+    drag.ghost = drag.el.cloneNode(true); drag.ghost.classList.add('ghost');
+    document.body.append(drag.ghost); drag.el.classList.add('dragging');
+  }
+  if (!drag.moved) return;
+  drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+  clearOver();
+  const t = document.elementFromPoint(e.clientX, e.clientY)?.closest('.slot');
+  if (t) t.classList.add('over');
+});
+function endDrag(e, cancelled){
+  if (!drag) return;
+  const d = drag; drag = null;
+  d.ghost?.remove(); d.el.classList.remove('dragging'); clearOver();
+  if (cancelled) return;
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  if (!d.moved){                       // toque: bota na 1ª lacuna vazia, ou devolve pro banco
+    if (d.from === 'bank'){ const k = slots.indexOf(null); if (k < 0) return; slots[k] = d.id; }
+    else slots[d.from] = null;
+  } else {
+    const slotEl = under?.closest('.slot');
+    if (slotEl){
+      const k = +slotEl.dataset.slot, occupant = slots[k];
+      slots[k] = d.id;
+      if (d.from !== 'bank') slots[d.from] = occupant;   // troca de lugar (ou fica igual se for a mesma lacuna)
+    } else if (under?.closest('#bank') && d.from !== 'bank'){ slots[d.from] = null; }
+    else return;
+  }
+  hasStarted = true; saveState(); renderAll();
+}
+document.addEventListener('pointerup', e => endDrag(e, false));
+document.addEventListener('pointercancel', e => endDrag(e, true));
+
+/* ---------- CONFERIR ---------- */
+$('submitBtn').addEventListener('click', () => {
+  if (gameOver) return;
+  results = puzzle.blanks.map((b, i) => norm(answerAt(i)) === norm(b.core));
+  gameOver = true; hasStarted = true;
+  saveState(); renderAll();
+  const hits = results.filter(Boolean).length;
+  $('feedback').textContent = hits === results.length ? 'Isso aí! 🎉' : `Acertou ${hits} de ${results.length}.`;
+  $('feedback').className = 'feedback ' + (hits === results.length ? 'ok' : 'bad');
+  playFinal();
+});
+
+/* ---------- ÁUDIO: 10 segundos com fade-out ---------- */
+const player = $('player');
+let playTimeout = null, fadeTimer = null;
+function fadeOutPlayer(duration = 1000){
+  const start = player.volume, steps = 20; let cur = 0;
+  fadeTimer = setInterval(() => {
+    cur++; player.volume = start * (1 - cur / steps);
+    if (cur >= steps){ clearInterval(fadeTimer); player.pause(); player.volume = 1; }
+  }, duration / steps);
+}
+function playFinal(){
+  clearTimeout(playTimeout); clearInterval(fadeTimer);
+  player.volume = 1; player.currentTime = 0;
+  player.play().catch(() => { $('feedback').textContent = 'Não consegui tocar o áudio.'; });
+  playTimeout = setTimeout(() => fadeOutPlayer(), 10000);
+}
+
+/* ---------- MODO ---------- */
+$('hardToggle').addEventListener('change', () => {
+  if (hasStarted){ $('hardToggle').checked = hard; return; }
+  hard = $('hardToggle').checked;
+  setup();
+});
+
+/* ---------- TROCAR DE DIA ---------- */
+let loadToken = 0;
+async function carregarDia(date){
+  const token = ++loadToken;
+  currentDate = date;
+  clearTimeout(playTimeout); clearInterval(fadeTimer); player.pause(); player.volume = 1;
+  $('dayTag').textContent = date.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  $('lyrics').textContent = 'Carregando a letra...';
+  $('bank').innerHTML = ''; $('bank').style.display = '';
+  $('feedback').textContent = ''; $('feedback').className = 'feedback';
+  $('resultCard').classList.remove('show', 'win', 'lose');
+  $('submitBtn').disabled = true; $('hardToggle').disabled = true;
+
+  const loaded = await loadLyrics(dayNumberFor(date));
+  if (token !== loadToken) return;      // outro dia foi escolhido enquanto carregava
+  data = loaded;
+  if (!data){
+    $('lyrics').textContent = 'Não consegui carregar a letra desse dia. Confira a pasta txt/ e abra o site por um servidor (http), não direto pelo arquivo.';
+    return;
+  }
+  player.src = `mp3/${data.song.base}.mp3`;
+  hard = initialMode();
+  setup();
+}
+
+/* ---------- CALENDÁRIO ---------- */
+const calOverlay = $('calOverlay'), calGrid = $('calGrid');
+function buildCalendar(){
+  const y = today.getFullYear(), m = today.getMonth();
+  const todayMid = new Date(y, m, today.getDate());
+  $('calMonthLabel').textContent = today.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+  calGrid.innerHTML = '';
+  for (let i = 0; i < new Date(y, m, 1).getDay(); i++){
+    const e = document.createElement('div'); e.className = 'cal-day empty'; calGrid.append(e);
+  }
+  const won = s => !!(s.results && s.results.every(Boolean));
+  const fmt = (label, s) => `${label}: ${s.results.filter(Boolean).length}/${s.results.length} ${won(s) ? '✅' : '❌'}`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++){
+    const cellDate = new Date(y, m, d), cell = document.createElement('div');
+    cell.className = 'cal-day'; cell.textContent = d;
+    if (cellDate > todayMid){ cell.classList.add('future'); calGrid.append(cell); continue; }
+
+    const nS = readSaved(false, cellDate), hS = readSaved(true, cellDate);
+    const nR = nS && nS.gameOver ? nS : null, hR = hS && hS.gameOver ? hS : null;
+    const wonN = !!nR && won(nR), wonH = !!hR && won(hR);
+    const lost = (!!nR && !wonN) || (!!hR && !wonH);
+    const started = (nS && nS.hasStarted && !nS.gameOver) || (hS && hS.hasStarted && !hS.gameOver);
+
+    if (wonN || wonH){ cell.textContent = '★'; cell.classList.add(wonH ? 'won-hard' : 'won-normal'); }
+    else if (lost){ cell.textContent = '✕'; cell.classList.add('lose'); }
+    else {
+      cell.classList.add('pending');
+      if (started) cell.classList.add('in-progress');
+      cell.addEventListener('click', () => { calOverlay.classList.remove('show'); carregarDia(cellDate); });
+    }
+    if (dateKeyFor(cellDate) === dateKeyFor(currentDate)) cell.classList.add('current');
+
+    if (nR || hR){
+      const lines = [];
+      if (nR) lines.push(fmt('Normal', nR));
+      if (hR) lines.push(fmt('Difícil', hR));
+      lines.push((nR || hR).song);
+      cell.setAttribute('data-tooltip', lines.join('\n'));
+    } else if (started) cell.setAttribute('data-tooltip', 'Jogo em andamento');
+    calGrid.append(cell);
+  }
+}
+$('trophyBtn').addEventListener('click', () => { buildCalendar(); calOverlay.classList.add('show'); });
+$('calCloseBtn').addEventListener('click', () => calOverlay.classList.remove('show'));
+calOverlay.addEventListener('click', e => { if (e.target === calOverlay) calOverlay.classList.remove('show'); });
+
+/* ---------- INIT ---------- */
+carregarDia(today);
+</script>
+</body>
+</html>
