@@ -455,13 +455,13 @@ const SONGS = [
   { title: "Literatura", file: "mp3/literatura.mp3"},
   { title: "Eu Sempre Volto", file: "mp3/eu_sempre_volto.mp3"},
   { title: "Jabuticabeira", file: "mp3/jabuticabeira.mp3"},
-  { title: "João", file: "mp3/joao.mp3"},
-  { title: "Tudo Me Lembra", file: "mp3/tudo_me_lembra.mp3"},
-  { title: "Coincidências", file: "mp3/coincidencias.mp3"},
-  { title: "O Arquiteto", file: "mp3/o_arquiteto.mp3"},
-  { title: "Curioso", file: "mp3/curioso.mp3"},
-  { title: "Passeios Noturnos", file: "mp3/passeios_noturnos.mp3"},
-  { title: "Memórias Póstumas", file: "mp3/memorias_postumas.mp3"},
+  { title: "João", file: "mp3/joao.mp3" },
+  { title: "Tudo Me Lembra", file: "mp3/tudo_me_lembra.mp3" },
+  { title: "Coincidências", file: "mp3/coincidencias.mp3" },
+  { title: "O Arquiteto", file: "mp3/o_arquiteto.mp3" },
+  { title: "Curioso", file: "mp3/curioso.mp3" },
+  { title: "Passeios Noturnos", file: "mp3/passeios_noturnos.mp3" },
+  { title: "Memórias Póstumas", file: "mp3/memorias_postumas.mp3" },
   { title: "Álcool", file: "mp3/alcool.mp3" },
   { title: "Louquinho", file: "mp3/louquinho.mp3" },
   { title: "Codinome Beija-Flor / O Tempo Não Para", file: "mp3/codinome_beija_flor_o_tempo_nao_para.mp3" },
@@ -470,6 +470,10 @@ const SONGS = [
   { title: "Pilantra (feat. Anitta)", file: "mp3/pilantra_feat_anitta.mp3", alt: "Pilantra" },
   { title: "Mal (feat. Gustavo Mioto)", file: "mp3/mal_feat_gustavo_mioto.mp3", alt: "Mal" },
   { title: "Jardins Da Babilônia (feat. Julia Mestre)", file: "mp3/jardins_da_babilonia_feat_julia_mestre.mp3", alt: "Jardins Da Babilônia" }
+];
+
+const MuteStartSong = [
+  { title: "Olhos Vermelhos" }
 ];
 
 /* ---------------- HELPERS ---------------- */
@@ -655,12 +659,13 @@ let isPlaying = false;
 function playSnippet(){
   if (isPlaying || gameOver) return;
   const duration = getDurations()[attemptIndex];
+  const muteInicio = MuteStartSong.some(m => m.title === song.title)
   hasStarted = true;
   isPlaying = true;
   playBtn.disabled = true;
   playBtn.classList.add('playing');
   hardModeToggle.disabled = true;
-  player.currentTime = 1.5;
+  player.currentTime = muteInicio ? 3.5 : 1.5;
   player.play().catch(() => {
     playHint.textContent = 'Não foi possível tocar o áudio.';
     isPlaying = false;
